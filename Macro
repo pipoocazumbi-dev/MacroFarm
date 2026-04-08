@@ -2,8 +2,8 @@ local player = game.Players.LocalPlayer
 local VirtualInputManager = game:GetService("VirtualInputManager")
 
 -- ===== CONFIG =====
-local CHECKPOINT_DELAY = 1
-local GLOBAL_TIMEOUT = 30
+local CHECKPOINT_DELAY = 0.7
+local GLOBAL_TIMEOUT = 35
 local START_DELAY_AFTER_KEY = 2
 
 -- ===== CHARACTER =====
