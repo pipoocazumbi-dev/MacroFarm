@@ -2,7 +2,7 @@ local player = game.Players.LocalPlayer
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local UIS = game:GetService("UserInputService")
 
--- ===== CONFIG PADRÃO =====
+-- ===== CONFIG =====
 local CHECKPOINT_DELAY = 3
 local GLOBAL_TIMEOUT = 30
 local START_DELAY_AFTER_KEY = 2
@@ -32,7 +32,7 @@ local scriptActive = true
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 260, 0, 200)
+frame.Size = UDim2.new(0, 260, 0, 240) -- 🔼 aumentado
 frame.Position = UDim2.new(1, -270, 0, 20)
 frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 frame.Active = true
@@ -69,9 +69,6 @@ statusText.Size = UDim2.new(1, -30, 0, 20)
 statusText.Position = UDim2.new(0,30,0,43)
 statusText.BackgroundTransparency = 1
 statusText.TextColor3 = Color3.new(1,1,1)
-statusText.Font = Enum.Font.Gotham
-statusText.TextSize = 13
-statusText.TextXAlignment = Enum.TextXAlignment.Left
 
 -- Progresso
 local checkpointLabel = Instance.new("TextLabel", frame)
@@ -79,12 +76,8 @@ checkpointLabel.Size = UDim2.new(1, -20, 0, 20)
 checkpointLabel.Position = UDim2.new(0,10,0,70)
 checkpointLabel.BackgroundTransparency = 1
 checkpointLabel.TextColor3 = Color3.fromRGB(200,200,200)
-checkpointLabel.Font = Enum.Font.Gotham
-checkpointLabel.TextSize = 13
-checkpointLabel.TextXAlignment = Enum.TextXAlignment.Left
 
 -- ===== INPUTS =====
-
 local function createInput(labelText, posY, default)
 	local label = Instance.new("TextLabel", frame)
 	label.Size = UDim2.new(0,80,0,25)
@@ -92,8 +85,6 @@ local function createInput(labelText, posY, default)
 	label.Text = labelText
 	label.TextColor3 = Color3.new(1,1,1)
 	label.BackgroundTransparency = 1
-	label.Font = Enum.Font.GothamBold
-	label.TextSize = 12
 	
 	local box = Instance.new("TextBox", frame)
 	box.Size = UDim2.new(0,60,0,25)
@@ -101,15 +92,13 @@ local function createInput(labelText, posY, default)
 	box.Text = tostring(default)
 	box.BackgroundColor3 = Color3.fromRGB(40,40,40)
 	box.TextColor3 = Color3.new(1,1,1)
-	box.Font = Enum.Font.Gotham
-	box.TextSize = 12
 	Instance.new("UICorner", box)
 	
 	return box
 end
 
-local delayBox = createInput("Delay", 100, CHECKPOINT_DELAY)
-local limitBox = createInput("Limit", 130, GLOBAL_TIMEOUT)
+local delayBox = createInput("Delay", 110, CHECKPOINT_DELAY)
+local limitBox = createInput("Limit", 145, GLOBAL_TIMEOUT)
 
 -- ===== BOTÕES =====
 local function createButton(text, x, y)
@@ -119,15 +108,13 @@ local function createButton(text, x, y)
 	btn.Text = text
 	btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
 	btn.TextColor3 = Color3.new(1,1,1)
-	btn.Font = Enum.Font.GothamBold
-	btn.TextSize = 12
 	Instance.new("UICorner", btn)
 	return btn
 end
 
-local startBtn = createButton("Start", 10, 160)
-local addBtn = createButton("Add", 120, 160)
-local clearBtn = createButton("Clear", 120, 100)
+local startBtn = createButton("Start", 10, 190)
+local addBtn = createButton("Add", 120, 190)
+local clearBtn = createButton("Clear", 10, 225) -- 🔽 agora separado
 
 -- ===== DRAG =====
 local dragging, dragStart, startPos
@@ -158,7 +145,7 @@ UIS.InputChanged:Connect(function(input)
 	end
 end)
 
--- ===== FUNÇÕES =====
+-- ===== FUNÇÕES (iguais) =====
 
 local function updateGUI()
 	checkpointLabel.Text = "Checkpoint: " .. currentIndex .. "/" .. #checkpoints
@@ -175,11 +162,10 @@ local function updateGUI()
 end
 
 local function updateConfig()
-	local delay = tonumber(delayBox.Text)
-	local limit = tonumber(limitBox.Text)
-	
-	if delay then CHECKPOINT_DELAY = delay end
-	if limit then GLOBAL_TIMEOUT = limit end
+	local d = tonumber(delayBox.Text)
+	local l = tonumber(limitBox.Text)
+	if d then CHECKPOINT_DELAY = d end
+	if l then GLOBAL_TIMEOUT = l end
 end
 
 delayBox.FocusLost:Connect(updateConfig)
@@ -193,7 +179,6 @@ local function createCheckpoint()
 	part.Color = Color3.fromRGB(0,170,255)
 	part.Position = root.Position
 	part.Parent = workspace
-	
 	table.insert(checkpoints, part)
 	updateGUI()
 end
@@ -218,11 +203,9 @@ local function moveTo(pos)
 	humanoid.MoveToFinished:Wait()
 end
 
--- ===== LOOP =====
 local function runLoop()
 	while isRunning and scriptActive do
 		if humanoid then humanoid.Health = 0 end
-		
 		task.wait(4)
 		getCharacter()
 		
@@ -253,11 +236,9 @@ local function runLoop()
 	end
 end
 
--- ===== BOTÕES =====
 startBtn.MouseButton1Click:Connect(function()
 	isRunning = not isRunning
 	updateGUI()
-	
 	if isRunning then
 		updateConfig()
 		task.spawn(runLoop)
