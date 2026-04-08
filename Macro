@@ -1,9 +1,10 @@
 local player = game.Players.LocalPlayer
 local VirtualInputManager = game:GetService("VirtualInputManager")
+local UIS = game:GetService("UserInputService")
 
--- ===== CONFIG =====
-local CHECKPOINT_DELAY = 0.7
-local GLOBAL_TIMEOUT = 35
+-- ===== CONFIG PADRÃO =====
+local CHECKPOINT_DELAY = 3
+local GLOBAL_TIMEOUT = 30
 local START_DELAY_AFTER_KEY = 2
 
 -- ===== CHARACTER =====
@@ -16,7 +17,6 @@ local function getCharacter()
 end
 
 getCharacter()
-
 player.CharacterAdded:Connect(function()
 	task.wait(0.5)
 	getCharacter()
@@ -29,11 +29,11 @@ local currentIndex = 0
 local scriptActive = true
 
 -- ===== GUI =====
-local screenGui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 
-local frame = Instance.new("Frame", screenGui)
-frame.Size = UDim2.new(0, 240, 0, 160)
-frame.Position = UDim2.new(1, -250, 0, 20)
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 260, 0, 200)
+frame.Position = UDim2.new(1, -270, 0, 20)
 frame.BackgroundColor3 = Color3.fromRGB(20,20,20)
 frame.Active = true
 Instance.new("UICorner", frame)
@@ -49,7 +49,7 @@ title.Font = Enum.Font.GothamBold
 title.TextSize = 14
 title.TextXAlignment = Enum.TextXAlignment.Left
 
--- Botão fechar
+-- Fechar
 local closeBtn = Instance.new("TextButton", frame)
 closeBtn.Size = UDim2.new(0,25,0,25)
 closeBtn.Position = UDim2.new(1,-30,0,5)
@@ -83,12 +83,39 @@ checkpointLabel.Font = Enum.Font.Gotham
 checkpointLabel.TextSize = 13
 checkpointLabel.TextXAlignment = Enum.TextXAlignment.Left
 
--- ===== BOTÕES =====
+-- ===== INPUTS =====
 
-local function createButton(text, posX, posY)
+local function createInput(labelText, posY, default)
+	local label = Instance.new("TextLabel", frame)
+	label.Size = UDim2.new(0,80,0,25)
+	label.Position = UDim2.new(0,10,0,posY)
+	label.Text = labelText
+	label.TextColor3 = Color3.new(1,1,1)
+	label.BackgroundTransparency = 1
+	label.Font = Enum.Font.GothamBold
+	label.TextSize = 12
+	
+	local box = Instance.new("TextBox", frame)
+	box.Size = UDim2.new(0,60,0,25)
+	box.Position = UDim2.new(0,90,0,posY)
+	box.Text = tostring(default)
+	box.BackgroundColor3 = Color3.fromRGB(40,40,40)
+	box.TextColor3 = Color3.new(1,1,1)
+	box.Font = Enum.Font.Gotham
+	box.TextSize = 12
+	Instance.new("UICorner", box)
+	
+	return box
+end
+
+local delayBox = createInput("Delay", 100, CHECKPOINT_DELAY)
+local limitBox = createInput("Limit", 130, GLOBAL_TIMEOUT)
+
+-- ===== BOTÕES =====
+local function createButton(text, x, y)
 	local btn = Instance.new("TextButton", frame)
 	btn.Size = UDim2.new(0,100,0,30)
-	btn.Position = UDim2.new(0,posX,0,posY)
+	btn.Position = UDim2.new(0,x,0,y)
 	btn.Text = text
 	btn.BackgroundColor3 = Color3.fromRGB(40,40,40)
 	btn.TextColor3 = Color3.new(1,1,1)
@@ -98,12 +125,11 @@ local function createButton(text, posX, posY)
 	return btn
 end
 
-local startBtn = createButton("Start", 10, 100)
-local addBtn = createButton("Add", 120, 100)
-local clearBtn = createButton("Clear", 10, 135)
+local startBtn = createButton("Start", 10, 160)
+local addBtn = createButton("Add", 120, 160)
+local clearBtn = createButton("Clear", 120, 100)
 
 -- ===== DRAG =====
-local UIS = game:GetService("UserInputService")
 local dragging, dragStart, startPos
 
 frame.InputBegan:Connect(function(input)
@@ -135,10 +161,7 @@ end)
 -- ===== FUNÇÕES =====
 
 local function updateGUI()
-	local total = #checkpoints
-	local current = math.clamp(currentIndex, 0, total)
-	
-	checkpointLabel.Text = "Checkpoint: " .. current .. "/" .. total
+	checkpointLabel.Text = "Checkpoint: " .. currentIndex .. "/" .. #checkpoints
 	
 	if isRunning then
 		statusCircle.BackgroundColor3 = Color3.fromRGB(0,255,0)
@@ -151,9 +174,18 @@ local function updateGUI()
 	end
 end
 
-local function createCheckpoint()
-	if not root then return end
+local function updateConfig()
+	local delay = tonumber(delayBox.Text)
+	local limit = tonumber(limitBox.Text)
 	
+	if delay then CHECKPOINT_DELAY = delay end
+	if limit then GLOBAL_TIMEOUT = limit end
+end
+
+delayBox.FocusLost:Connect(updateConfig)
+limitBox.FocusLost:Connect(updateConfig)
+
+local function createCheckpoint()
 	local part = Instance.new("Part")
 	part.Size = Vector3.new(1,1,1)
 	part.Anchored = true
@@ -170,7 +202,6 @@ local function clearCheckpoints()
 	for _, p in ipairs(checkpoints) do
 		if p then p:Destroy() end
 	end
-	
 	checkpoints = {}
 	currentIndex = 0
 	updateGUI()
@@ -183,10 +214,8 @@ local function pressKey4()
 end
 
 local function moveTo(pos)
-	if humanoid then
-		humanoid:MoveTo(pos)
-		humanoid.MoveToFinished:Wait()
-	end
+	humanoid:MoveTo(pos)
+	humanoid.MoveToFinished:Wait()
 end
 
 -- ===== LOOP =====
@@ -224,30 +253,25 @@ local function runLoop()
 	end
 end
 
--- ===== BOTÕES AÇÕES =====
-
+-- ===== BOTÕES =====
 startBtn.MouseButton1Click:Connect(function()
 	isRunning = not isRunning
 	updateGUI()
 	
 	if isRunning then
+		updateConfig()
 		task.spawn(runLoop)
 	end
 end)
 
-addBtn.MouseButton1Click:Connect(function()
-	createCheckpoint()
-end)
-
-clearBtn.MouseButton1Click:Connect(function()
-	clearCheckpoints()
-end)
+addBtn.MouseButton1Click:Connect(createCheckpoint)
+clearBtn.MouseButton1Click:Connect(clearCheckpoints)
 
 closeBtn.MouseButton1Click:Connect(function()
 	isRunning = false
 	scriptActive = false
 	clearCheckpoints()
-	screenGui:Destroy()
+	gui:Destroy()
 end)
 
 updateGUI()
